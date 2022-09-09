@@ -5,6 +5,15 @@ TILES = [
     "1z", "2z", "3z", "4z", "5z", "6z", "7z",
 ]
 
+YIZHONG = {
+    "役满": 9,
+    "双倍役满": 1,
+    "六番": 1,
+    "三番": 3,
+    "二番": 10,
+    "一番": 1,
+}
+
 
 def count_to_tiles(cnt):
     if len(cnt) != len(TILES):
