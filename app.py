@@ -45,6 +45,16 @@ def reset_on_click(event):
         b.Enabled = True
     panel.Refresh()
 
+def zhaopaixing(ipai, pai, shangyi_cnt, shangyipx, paixing):
+    if ipai == 8:
+        if pai == 0:
+            paixing.append(shangyipx)
+        if pai == 1:
+            if shangyi_cnt[6] != 0 and shangyi_cnt[7] != 0:
+                shangyipx["shunzi"].append(str(ipai-2)+str(ipai-1)+str(ipai))
+            else:
+                shangyipx["meiyong"].append(str(ipai))
+
 
 def send_tiles_func(need_interact, reset):
     def send_tiles(event):
@@ -69,6 +79,28 @@ def send_tiles_func(need_interact, reset):
 
             for i in range(YIZHONG[jifan]):
                 enable_pais = [[1] * 14]
+
+                paixing = []
+                pais = [0]
+
+                m_cnt = cnt[0:9]
+                p_cnt = cnt[9:18]
+                s_cnt = cnt[18:27]
+                z_cnt = cnt[27:34]
+
+                cnt_copy = [m_cnt, p_cnt, s_cnt]
+
+                for i_cnt in cnt_copy:
+                    for ipai, pai in enumerate(i_cnt):
+                        if ipai != 0:
+                            if ipai == 0:
+                                shangyipx = {
+                                    "duizi":[],
+                                    "kezi":[],
+                                    "gangzi":[],
+                                    "shunzi":[],
+                                    "meiyong":[]
+                                }
 
                 if jifan=="役满" and i == 0:
                     static_text1 = wx.StaticText(panely, -1, '九莲宝灯', style=wx.LEFT)
