@@ -77,13 +77,14 @@ def zhaopaixing(ipai, shangyi_cnt, shangyipx, paixing, ispaixing, paitype, daoji
         isshunzi = False
         if shangyi_cnt[ipai] >= 1 and paitype != 3:
             isshunzi = False
+            # TODO  顺子应该笛卡尔积
             if ipai > 1 and shangyi_cnt[ipai - 2] != 0 and shangyi_cnt[ipai - 1] != 0:
                 isshunzi = True
                 shangyipx_cp = copy.deepcopy(shangyipx)
                 # shunzi_count = (shangyi_cnt[ipai - 2] + shangyi_cnt[ipai - 1] + shangyi_cnt[ipai]) // 3
                 shangyipx_cp["shunzi"].append((str(ipai - 2 + 1) + str(ipai - 1 + 1) + str(ipai + 1),
-                                            [daojigele - cnt[paitype * 9 + ipai - 1] -(cnt[paitype * 9 + ipai - 2] - shangyi_cnt[ipai - 2]),
-                                             daojigele - (cnt[paitype * 9 + ipai - 1] - shangyi_cnt[ipai - 1]),
+                                            [daojigele - cnt[paitype * 9 + ipai - 1] - shangyi_cnt[ipai - 2],
+                                             daojigele - shangyi_cnt[ipai - 1],
                                              daojigele + (cnt[paitype * 9 + ipai] - shangyi_cnt[ipai])]))
                 shangyi_cnt_cp = copy.deepcopy(shangyi_cnt)
                 shangyi_cnt_cp[ipai] = shangyi_cnt_cp[ipai] - 1
@@ -94,7 +95,7 @@ def zhaopaixing(ipai, shangyi_cnt, shangyipx, paixing, ispaixing, paitype, daoji
                 isshunzi = True
                 shangyipx_cp = copy.deepcopy(shangyipx)
                 shangyipx_cp["shunzi"].append((str(ipai - 1 + 1) + str(ipai + 1) + str(ipai + 1 + 1),
-                                            [daojigele - (cnt[paitype * 9 + ipai - 1] - shangyi_cnt[ipai - 1]),
+                                            [daojigele - shangyi_cnt[ipai - 1],
                                              daojigele + (cnt[paitype * 9 + ipai] - shangyi_cnt[ipai]),
                                              daojigele + cnt[paitype * 9 + ipai] + (cnt[paitype * 9 + ipai + 1] - shangyi_cnt[ipai + 1])]))
                 shangyi_cnt_cp = copy.deepcopy(shangyi_cnt)
@@ -163,6 +164,48 @@ def zhaosuoyoukezi(paixindex, paixing, suoyoukezi, suoyoukezis):
         suoyoukezi_cp = copy.deepcopy(suoyoukezi)
         zhaosuoyoukezi(paixindex + 1, paixing, suoyoukezi_cp, suoyoukezis)
 
+def zhaosuoyougangzi(paixindex, paixing, suoyougangzi, suoyougangzis):
+    if paixindex == 4:
+        if len(suoyougangzi):
+            suoyougangzis.append(suoyougangzi)
+        return
+    if len(paixing[paitypes[paixindex]]) != 0:
+        for pxkezi in paixing[paitypes[paixindex]]:
+            suoyougangzi_cp = copy.deepcopy(suoyougangzi)
+            suoyougangzi_cp = suoyougangzi_cp + pxkezi["gangzi"]
+            zhaosuoyougangzi(paixindex + 1, paixing, suoyougangzi_cp, suoyougangzis)
+    else:
+        suoyougangzi_cp = copy.deepcopy(suoyougangzi)
+        zhaosuoyougangzi(paixindex + 1, paixing, suoyougangzi_cp, suoyougangzis)
+        
+def zhaosuoyouduizi(paixindex, paixing, suoyouduizi, suoyouduizis):
+    if paixindex == 4:
+        if len(suoyouduizi):
+            suoyouduizis.append(suoyouduizi)
+        return
+    if len(paixing[paitypes[paixindex]]) != 0:
+        for pxkezi in paixing[paitypes[paixindex]]:
+            suoyouduizi_cp = copy.deepcopy(suoyouduizi)
+            suoyouduizi_cp = suoyouduizi_cp + pxkezi["duizi"]
+            zhaosuoyouduizi(paixindex + 1, paixing, suoyouduizi_cp, suoyouduizis)
+    else:
+        suoyouduizi_cp = copy.deepcopy(suoyouduizi)
+        zhaosuoyouduizi(paixindex + 1, paixing, suoyouduizi_cp, suoyouduizis)
+
+def zhaosuoyoushunzi(paixindex, paixing, suoyoushunzi, suoyoushunzis):
+    if paixindex == 4:
+        if len(suoyoushunzi):
+            suoyoushunzis.append(suoyoushunzi)
+        return
+    if len(paixing[paitypes[paixindex]]) != 0:
+        for pxkezi in paixing[paitypes[paixindex]]:
+            suoyoushunzi_cp = copy.deepcopy(suoyoushunzi)
+            suoyoushunzi_cp = suoyoushunzi_cp + pxkezi["shunzi"]
+            zhaosuoyoushunzi(paixindex + 1, paixing, suoyoushunzi_cp, suoyoushunzis)
+    else:
+        suoyoushunzi_cp = copy.deepcopy(suoyoushunzi)
+        zhaosuoyoushunzi(paixindex + 1, paixing, suoyoushunzi_cp, suoyoushunzis)
+
 def send_tiles_func(need_interact, reset):
     def send_tiles(event):
         global cnt
@@ -224,7 +267,10 @@ def send_tiles_func(need_interact, reset):
 
                 if jifan=="役满" and i == 0:
                     static_text1 = wx.StaticText(panely, -1, '九莲宝灯', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '同种数牌1112345678999+其中任意一种再有1张', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
                     daolenagepai = 0
                     paitype = 0
                     for tongyipainame in pais:
@@ -246,7 +292,10 @@ def send_tiles_func(need_interact, reset):
 
                 if jifan=="役满" and i == 1:
                     static_text1 = wx.StaticText(panely, -1, '国士无双', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '全部十三种幺九牌各1张外加其中一种再有1张', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
                     guoshijishu = [1, 0, 0, 0, 0, 0, 0, 0, 1] * 3 + [1, 1, 1, 1, 1, 1, 1, 0, 0]
                     enable_pai = [0] * sum(cnt)
                     daolenagepai = 0
@@ -263,7 +312,10 @@ def send_tiles_func(need_interact, reset):
 
                 if jifan=="役满" and i == 2:
                     static_text1 = wx.StaticText(panely, -1, '四暗刻', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '包含没有碰的4组刻子', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
                     enable_pai = [0] * sum(cnt)
                     max_kezi = 0
                     max_kezi_index = []
@@ -279,83 +331,216 @@ def send_tiles_func(need_interact, reset):
                         enable_pai[keziindex + 2] = 1
                     enable_pais.append(enable_pai)
 
-
-
                 if jifan=="役满" and i == 3:
                     static_text1 = wx.StaticText(panely, -1, '绿一色', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '只包含索子的23468以及发', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    enable_pai = [0] * sum(cnt)
+                    daolenagepai = len(pais["m"]) + len(pais["p"])
+                    for paiindex, objpai in enumerate(pais["s"]):
+                        if objpai != 0 and objpai != 4 and objpai != 6 and objpai != 8:
+                            enable_pai[daolenagepai] = 1
+                        daolenagepai += 1
+                    for paiindex, objpai in enumerate(pais["z"]):
+                        if objpai == 5:
+                            enable_pai[daolenagepai] = 1
+                        daolenagepai += 1
+                    enable_pais.append(enable_pai)
+
                 if jifan=="役满" and i == 4:
                     static_text1 = wx.StaticText(panely, -1, '字一色', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '只包含字牌', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    enable_pai = [0] * sum(cnt)
+                    daolenagepai = len(pais["m"]) + len(pais["p"]) + len(pais["s"])
+                    for paiindex, objpai in enumerate(pais["z"]):
+                        enable_pai[daolenagepai] = 1
+                        daolenagepai += 1
+                    enable_pais.append(enable_pai)
+
                 if jifan=="役满" and i == 5:
                     static_text1 = wx.StaticText(panely, -1, '小四喜', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '包含三种风牌的刻子+剩下一种风牌的雀头', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    enable_pai = [0] * sum(cnt)
+                    daolenagepai = len(pais["m"]) + len(pais["p"]) + len(pais["s"])
+                    fengpaijishu = [3, 3, 3, 3, 0, 0, 0, 0, 0]
+                    for paiindex, objpai in enumerate(pais["z"]):
+                        if objpai < 4 and fengpaijishu[objpai] != 0:
+                            fengpaijishu[objpai] -= 1
+                            enable_pai[daolenagepai] = 1
+                        daolenagepai += 1
+                    enable_pais.append(enable_pai)
+
+
                 if jifan=="役满" and i == 6:
                     static_text1 = wx.StaticText(panely, -1, '清老头', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '手牌中只有老头牌(19万，19筒，19索)', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    daolenagepai = 0
+                    paitype = 0
+                    enable_pai = [0] * sum(cnt)
+                    for tongyipainame in pais:
+                        if paitype == 3:
+                            break
+                        tongyipai = pais[tongyipainame]
+                        for paiindex, objpai in enumerate(tongyipai):
+                            if objpai == 0 or objpai == 8:
+                                enable_pai[daolenagepai] = 1
+                            daolenagepai += 1
+                        paitype += 1
+                    enable_pais.append(enable_pai)
+
                 if jifan=="役满" and i == 7:
                     static_text1 = wx.StaticText(panely, -1, '四杠子', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '1人开杠4次', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    enable_pai = [0] * sum(cnt)
+                    max_gangzi = 0
+                    max_gangzi_index = []
+                    suoyougangzis = []
+                    zhaosuoyougangzi(0, paixing, [], suoyougangzis)
+                    for gangzis in suoyougangzis:
+                        if max_gangzi < len(gangzis):
+                            max_gangzi = len(gangzis)
+                            max_gangzi_index = gangzis
+                    for gangzi, gangziindex in max_gangzi_index:
+                        enable_pai[gangziindex] = 1
+                        enable_pai[gangziindex + 1] = 1
+                        enable_pai[gangziindex + 2] = 1
+                        enable_pai[gangziindex + 3] = 1
+                    enable_pais.append(enable_pai)
+
                 if jifan=="役满" and i == 8:
                     static_text1 = wx.StaticText(panely, -1, '大三元', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '包含白、发、中的三组刻子', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    enable_pai = [0] * sum(cnt)
+                    daolenagepai = len(pais["m"]) + len(pais["p"]) + len(pais["s"])
+                    fengpaijishu = [0, 0, 0, 0, 3, 3, 3, 0, 0]
+                    for paiindex, objpai in enumerate(pais["z"]):
+                        if 7 > objpai > 3 and fengpaijishu[objpai] != 0:
+                            fengpaijishu[objpai] -= 1
+                            enable_pai[daolenagepai] = 1
+                        daolenagepai += 1
+                    enable_pais.append(enable_pai)
 
 
                 if jifan=="双倍役满" and i == 0:
                     static_text1 = wx.StaticText(panely, -1, '大四喜', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '包含4种风牌的刻子', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
 
 
                 if jifan=="六番" and i == 0:
                     static_text1 = wx.StaticText(panely, -1, '清一色', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '只包含1种数牌，不能含有字牌', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
 
                 if jifan=="三番" and i == 0:
                     static_text1 = wx.StaticText(panely, -1, '混一色', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '只包含1种数牌，并且含有字牌的刻子或者雀头', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
                 if jifan=="三番" and i == 1:
                     static_text1 = wx.StaticText(panely, -1, '纯全带幺九', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '只包含老头牌的4组顺子和刻子+老头牌的雀头', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
                 if jifan=="三番" and i == 2:
                     static_text1 = wx.StaticText(panely, -1, '二杯口', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '包含2组一杯口', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
 
 
                 if jifan=="二番" and i == 0:
                     static_text1 = wx.StaticText(panely, -1, '小三元', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '包含白、发、中其中2种的刻子+剩下1种的雀头', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
                 if jifan=="二番" and i == 1:
                     static_text1 = wx.StaticText(panely, -1, '三杠子', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '一人开杠3次', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
                 if jifan=="二番" and i == 2:
                     static_text1 = wx.StaticText(panely, -1, '混老头', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '胡牌时只包含老头牌(19万，19筒，19索)和字牌', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
                 if jifan=="二番" and i == 3:
                     static_text1 = wx.StaticText(panely, -1, '三暗刻', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '拥有3组没有碰的刻子', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
                 if jifan=="二番" and i == 4:
                     static_text1 = wx.StaticText(panely, -1, '对对和', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '拥有4组刻子或者杠', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
                 if jifan=="二番" and i == 5:
                     static_text1 = wx.StaticText(panely, -1, '三色同刻', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '万，筒，索都有相同数字的刻子', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
                 if jifan=="二番" and i == 6:
                     static_text1 = wx.StaticText(panely, -1, '三色同顺', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '万，筒，索都有相同数字的顺子', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
                 if jifan=="二番" and i == 7:
                     static_text1 = wx.StaticText(panely, -1, '混全带幺九', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '包含老头牌加上字牌的4组顺子和刻子+么九牌的雀头', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
                 if jifan=="二番" and i == 8:
                     static_text1 = wx.StaticText(panely, -1, '一气通贯', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '同种数牌组成123.456,789的顺子', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
                 if jifan=="二番" and i == 9:
                     static_text1 = wx.StaticText(panely, -1, '七对子', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '7组不同的对子', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
 
 
                 if jifan=="一番" and i == 0:
                     static_text1 = wx.StaticText(panely, -1, '段幺九', style=wx.LEFT)
+                    static_text2 = wx.StaticText(panely, -1, '只包含字牌', style=wx.LEFT)
+                    static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    vboxy.Add(static_text2, flag=wx.LEFT, border=5)
 
                 for enable_pai in enable_pais:
                     grid_sizery = wx.GridSizer(1, 14, 4, 4)
