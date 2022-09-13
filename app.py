@@ -2,11 +2,13 @@ import requests
 import wx
 import wx.lib.buttons as buts
 import wx.lib.scrolledpanel as scrolled
+import copy
 
 from utils import TILES, count_to_tiles, tiles_to_count, YIZHONG
 # TODO: data binding
 cnt = [0] * len(TILES)
 
+paitypes = ["m", "p", "s", "z"]
 
 def on_text_change(event):
     global cnt
@@ -37,7 +39,7 @@ def tile_on_click_func(tile_index):
 
 
 def reset_on_click(event):
-    global cnt
+    global cnt, pais, daojigele
 
     cnt = [0] * len(TILES)
     text_ctrl.Clear()
@@ -45,16 +47,121 @@ def reset_on_click(event):
         b.Enabled = True
     panel.Refresh()
 
-def zhaopaixing(ipai, pai, shangyi_cnt, shangyipx, paixing):
-    if ipai == 8:
-        if pai == 0:
-            paixing.append(shangyipx)
-        if pai == 1:
-            if shangyi_cnt[6] != 0 and shangyi_cnt[7] != 0:
-                shangyipx["shunzi"].append(str(ipai-2)+str(ipai-1)+str(ipai))
-            else:
-                shangyipx["meiyong"].append(str(ipai))
+def zhaopaixing(ipai, shangyi_cnt, shangyipx, paixing, ispaixing, paitype, daojigele):
+    global cnt
+    if (paitype != 3 and ipai == 9) or (paitype == 3 and ipai == 7):
+        for indexpai, shangyicnt in enumerate(shangyi_cnt[:-1]):
+            if shangyicnt != 0:
+                ispaixing = True
+                if shangyicnt == 1:
+                    shangyipx["meiyong"].append((str(indexpai + 1), sum(cnt[:paitype * 9 + indexpai]) + (cnt[paitype * 9 + indexpai] - shangyi_cnt[indexpai])))
+                    shangyi_cnt[indexpai] = shangyi_cnt[indexpai] - 1
+                if shangyicnt == 2:
+                    shangyipx["duizi"].append((str(indexpai + 1) + str(indexpai + 1), sum(cnt[:paitype * 9 + indexpai]) + (cnt[paitype * 9 + indexpai] - shangyi_cnt[indexpai])))
+                    shangyi_cnt[indexpai] = shangyi_cnt[indexpai] - 2
+                if shangyicnt == 3:
+                    shangyipx["kezi"].append((str(indexpai + 1) + str(indexpai + 1) + str(indexpai + 1), sum(cnt[:paitype * 9 + indexpai]) + (cnt[paitype * 9 + indexpai] - shangyi_cnt[indexpai])))
+                    shangyi_cnt[indexpai] = shangyi_cnt[indexpai] - 3
+                if shangyicnt == 4:
+                    shangyipx["gangzi"].append((
+                        str(indexpai + 1) + str(indexpai + 1) + str(indexpai + 1) + str(indexpai + 1), sum(cnt[:paitype * 9 + indexpai]) + (cnt[paitype * 9 + indexpai] - shangyi_cnt[indexpai])))
+                    shangyi_cnt[indexpai] = shangyi_cnt[indexpai] - 4
+        if ispaixing:
+            paixing[paitypes[paitype]].append(shangyipx)
+        return
+    else:
+        if shangyi_cnt[ipai] == 0:
+            zhaopaixing(ipai + 1, shangyi_cnt, shangyipx, paixing, ispaixing, paitype, daojigele + cnt[paitype * 9 + ipai])
+        else:
+            ispaixing = True
+        isshunzi = False
+        if shangyi_cnt[ipai] >= 1 and paitype != 3:
+            isshunzi = False
+            if ipai > 1 and shangyi_cnt[ipai - 2] != 0 and shangyi_cnt[ipai - 1] != 0:
+                isshunzi = True
+                shangyipx_cp = copy.deepcopy(shangyipx)
+                # shunzi_count = (shangyi_cnt[ipai - 2] + shangyi_cnt[ipai - 1] + shangyi_cnt[ipai]) // 3
+                shangyipx_cp["shunzi"].append((str(ipai - 2 + 1) + str(ipai - 1 + 1) + str(ipai + 1),
+                                            [daojigele - cnt[paitype * 9 + ipai - 1] -(cnt[paitype * 9 + ipai - 2] - shangyi_cnt[ipai - 2]),
+                                             daojigele - (cnt[paitype * 9 + ipai - 1] - shangyi_cnt[ipai - 1]),
+                                             daojigele + (cnt[paitype * 9 + ipai] - shangyi_cnt[ipai])]))
+                shangyi_cnt_cp = copy.deepcopy(shangyi_cnt)
+                shangyi_cnt_cp[ipai] = shangyi_cnt_cp[ipai] - 1
+                shangyi_cnt_cp[ipai - 2] = shangyi_cnt_cp[ipai - 2] - 1
+                shangyi_cnt_cp[ipai - 1] = shangyi_cnt_cp[ipai - 1] - 1
+                zhaopaixing(ipai + 1, shangyi_cnt_cp, shangyipx_cp, paixing, ispaixing, paitype, daojigele + cnt[paitype * 9 + ipai])
+            if 8 > ipai > 0 != shangyi_cnt[ipai - 1] and shangyi_cnt[ipai + 1] != 0:
+                isshunzi = True
+                shangyipx_cp = copy.deepcopy(shangyipx)
+                shangyipx_cp["shunzi"].append((str(ipai - 1 + 1) + str(ipai + 1) + str(ipai + 1 + 1),
+                                            [daojigele - (cnt[paitype * 9 + ipai - 1] - shangyi_cnt[ipai - 1]),
+                                             daojigele + (cnt[paitype * 9 + ipai] - shangyi_cnt[ipai]),
+                                             daojigele + cnt[paitype * 9 + ipai] + (cnt[paitype * 9 + ipai + 1] - shangyi_cnt[ipai + 1])]))
+                shangyi_cnt_cp = copy.deepcopy(shangyi_cnt)
+                shangyi_cnt_cp[ipai] = shangyi_cnt_cp[ipai] - 1
+                shangyi_cnt_cp[ipai - 1] = shangyi_cnt_cp[ipai - 1] - 1
+                shangyi_cnt_cp[ipai + 1] = shangyi_cnt_cp[ipai + 1] - 1
+                zhaopaixing(ipai + 1, shangyi_cnt_cp, shangyipx_cp, paixing, ispaixing, paitype, daojigele + cnt[paitype * 9 + ipai])
+            if ipai < 7 and shangyi_cnt[ipai + 1] != 0 and shangyi_cnt[ipai + 2] != 0:
+                isshunzi = True
+                shangyipx_cp = copy.deepcopy(shangyipx)
+                shangyipx_cp["shunzi"].append((str(ipai + 1) + str(ipai + 1 + 1) + str(ipai + 2 + 1),
+                                            [daojigele + (cnt[paitype * 9 + ipai] - shangyi_cnt[ipai]),
+                                             daojigele + cnt[paitype * 9 + ipai] + (cnt[paitype * 9 + ipai + 1] - shangyi_cnt[ipai + 1]),
+                                             daojigele + cnt[paitype * 9 + ipai] + cnt[paitype * 9 + 1] + (cnt[paitype * 9 + ipai + 2] - shangyi_cnt[ipai + 2])]))
+                shangyi_cnt_cp = copy.deepcopy(shangyi_cnt)
+                shangyi_cnt_cp[ipai] = shangyi_cnt_cp[ipai] - 1
+                shangyi_cnt_cp[ipai + 1] = shangyi_cnt_cp[ipai + 1] - 1
+                shangyi_cnt_cp[ipai + 2] = shangyi_cnt_cp[ipai + 2] - 1
+                zhaopaixing(ipai + 1, shangyi_cnt_cp, shangyipx_cp, paixing, ispaixing, paitype, daojigele + cnt[paitype * 9 + ipai])
+        if shangyi_cnt[ipai] >= 2:
+            shangyipx_cp = copy.deepcopy(shangyipx)
+            shangyipx_cp["duizi"].append((str(ipai + 1) + str(ipai + 1), daojigele + (cnt[paitype * 9 + ipai] - shangyi_cnt[ipai])))
+            shangyi_cnt_cp = copy.deepcopy(shangyi_cnt)
+            shangyi_cnt_cp[ipai] = shangyi_cnt_cp[ipai] - 2
+            if shangyi_cnt_cp[ipai] == 1:
+                shangyipx_cp["meiyong"].append((str(ipai + 1), daojigele + (cnt[paitype * 9 + ipai] - shangyi_cnt_cp[ipai])))
+                shangyi_cnt_cp[ipai] = shangyi_cnt_cp[ipai] - 1
+            if shangyi_cnt_cp[ipai] == 2:
+                shangyipx_cp["duizi"].append((str(ipai + 1) + str(ipai + 1), daojigele + (cnt[paitype * 9 + ipai] - shangyi_cnt_cp[ipai])))
+                shangyi_cnt_cp[ipai] = shangyi_cnt_cp[ipai] - 2
+            zhaopaixing(ipai + 1, shangyi_cnt_cp, shangyipx_cp, paixing, ispaixing, paitype, daojigele + cnt[paitype * 9 + ipai])
+        if shangyi_cnt[ipai] >= 3:
+            shangyipx_cp = copy.deepcopy(shangyipx)
+            shangyipx_cp["kezi"].append((str(ipai + 1) + str(ipai + 1) + str(ipai + 1), daojigele + (cnt[paitype * 9 + ipai] - shangyi_cnt[ipai])))
+            shangyi_cnt_cp = copy.deepcopy(shangyi_cnt)
+            shangyi_cnt_cp[ipai] = shangyi_cnt_cp[ipai] - 3
+            if shangyi_cnt_cp[ipai] == 1:
+                shangyipx_cp["meiyong"].append((str(ipai + 1), daojigele + (cnt[paitype * 9 + ipai] - shangyi_cnt_cp[ipai])))
+                shangyi_cnt_cp[ipai] = shangyi_cnt_cp[ipai] - 1
+            zhaopaixing(ipai + 1, shangyi_cnt_cp, shangyipx_cp, paixing, ispaixing, paitype, daojigele + cnt[paitype * 9 + ipai])
+        if shangyi_cnt[ipai] >= 4:
+            shangyipx_cp = copy.deepcopy(shangyipx)
+            shangyipx_cp["gangzi"].append((str(ipai + 1) + str(ipai + 1) + str(ipai + 1) + str(ipai + 1), daojigele + (cnt[paitype * 9 + ipai] - shangyi_cnt[ipai])))
+            shangyi_cnt_cp = copy.deepcopy(shangyi_cnt)
+            shangyi_cnt_cp[ipai] = shangyi_cnt_cp[ipai] - 4
+            zhaopaixing(ipai + 1, shangyi_cnt_cp, shangyipx_cp, paixing, ispaixing, paitype, daojigele + cnt[paitype * 9 + ipai])
+        if shangyi_cnt[ipai] == 1:
+            shangyipx_cp = copy.deepcopy(shangyipx)
+            shangyipx_cp["meiyong"].append((str(ipai + 1), daojigele + (cnt[paitype * 9 + ipai] - shangyi_cnt[ipai])))
+            shangyi_cnt_cp = copy.deepcopy(shangyi_cnt)
+            shangyi_cnt_cp[ipai] = shangyi_cnt_cp[ipai] - 1
+            zhaopaixing(ipai + 1, shangyi_cnt_cp, shangyipx_cp, paixing, ispaixing, paitype, daojigele + cnt[paitype * 9 + ipai])
 
+
+def zhaosuoyoukezi(paixindex, paixing, suoyoukezi, suoyoukezis):
+    if paixindex == 4:
+        if len(suoyoukezi):
+            suoyoukezis.append(suoyoukezi)
+        return
+    if len(paixing[paitypes[paixindex]]) != 0:
+        for pxkezi in paixing[paitypes[paixindex]]:
+            suoyoukezi_cp = copy.deepcopy(suoyoukezi)
+            suoyoukezi_cp = suoyoukezi_cp + pxkezi["kezi"]
+            zhaosuoyoukezi(paixindex + 1, paixing, suoyoukezi_cp, suoyoukezis)
+    else:
+        suoyoukezi_cp = copy.deepcopy(suoyoukezi)
+        zhaosuoyoukezi(paixindex + 1, paixing, suoyoukezi_cp, suoyoukezis)
 
 def send_tiles_func(need_interact, reset):
     def send_tiles(event):
@@ -78,41 +185,102 @@ def send_tiles_func(need_interact, reset):
             vboxy.Add(static_text, flag=wx.LEFT, border=5)
 
             for i in range(YIZHONG[jifan]):
-                enable_pais = [[1] * 14]
+                enable_pais = []
+                pais = {
+                    "m": [],
+                    "p": [],
+                    "s": [],
+                    "z": []
+                }
 
-                paixing = []
-                pais = [0]
+                paixing = {
+                    "m": [],
+                    "p": [],
+                    "s": [],
+                    "z": []
+                }
 
                 m_cnt = cnt[0:9]
                 p_cnt = cnt[9:18]
                 s_cnt = cnt[18:27]
                 z_cnt = cnt[27:34]
+                z_cnt.append(0)
+                z_cnt.append(0)
 
-                cnt_copy = [m_cnt, p_cnt, s_cnt]
+                cnt_copy = [m_cnt, p_cnt, s_cnt, z_cnt]
 
-                for i_cnt in cnt_copy:
-                    for ipai, pai in enumerate(i_cnt):
-                        if ipai != 0:
-                            if ipai == 0:
-                                shangyipx = {
-                                    "duizi":[],
-                                    "kezi":[],
-                                    "gangzi":[],
-                                    "shunzi":[],
-                                    "meiyong":[]
-                                }
+                for ipaitype, i_cnt in enumerate(cnt_copy):
+                    shangyipx = {
+                        "duizi": [],
+                        "kezi": [],
+                        "gangzi": [],
+                        "shunzi": [],
+                        "meiyong": []
+                    }
+                    for title_index, title_num in enumerate(i_cnt):
+                        for itnum in range(title_num):
+                            pais[paitypes[ipaitype]].append(title_index)
+                    zhaopaixing(0, i_cnt, shangyipx, paixing, False, ipaitype, sum(cnt[:ipaitype * 9]))
 
                 if jifan=="役满" and i == 0:
                     static_text1 = wx.StaticText(panely, -1, '九莲宝灯', style=wx.LEFT)
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    daolenagepai = 0
+                    paitype = 0
+                    for tongyipainame in pais:
+                        if paitype == 3:
+                            break
+                        paitype += 1
+                        tongyipai = pais[tongyipainame]
+                        jiulianjishu = [3, 1, 1, 1, 1, 1, 1, 1, 1, 3]
+                        enable_pai = [0] * sum(cnt)
+                        shifouyoupai = False
+                        for paiindex, objpai in enumerate(tongyipai):
+                            shifouyoupai = True
+                            if jiulianjishu[objpai % 9] != 0:
+                                jiulianjishu[objpai % 9] -= 1
+                                enable_pai[daolenagepai] = 1
+                            daolenagepai += 1
+                        if shifouyoupai:
+                            enable_pais.append(enable_pai)
 
                 if jifan=="役满" and i == 1:
                     static_text1 = wx.StaticText(panely, -1, '国士无双', style=wx.LEFT)
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    guoshijishu = [1, 0, 0, 0, 0, 0, 0, 0, 1] * 3 + [1, 1, 1, 1, 1, 1, 1, 0, 0]
+                    enable_pai = [0] * sum(cnt)
+                    daolenagepai = 0
+                    paitype = 0
+                    for tongyipainame in pais:
+                        tongyipai = pais[tongyipainame]
+                        for paiindex, objpai in enumerate(tongyipai):
+                            if guoshijishu[paitype * 9 + objpai] != 0:
+                                guoshijishu[paitype * 9 + objpai] -= 1
+                                enable_pai[daolenagepai] = 1
+                            daolenagepai += 1
+                        paitype += 1
+                    enable_pais.append(enable_pai)
 
                 if jifan=="役满" and i == 2:
                     static_text1 = wx.StaticText(panely, -1, '四暗刻', style=wx.LEFT)
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
+                    enable_pai = [0] * sum(cnt)
+                    max_kezi = 0
+                    max_kezi_index = []
+                    suoyoukezis = []
+                    zhaosuoyoukezi(0, paixing, [], suoyoukezis)
+                    for kezis in suoyoukezis:
+                        if max_kezi < len(kezis):
+                            max_kezi = len(kezis)
+                            max_kezi_index = kezis
+                    for kezi, keziindex in max_kezi_index:
+                        enable_pai[keziindex] = 1
+                        enable_pai[keziindex + 1] = 1
+                        enable_pai[keziindex + 2] = 1
+                    enable_pais.append(enable_pai)
+
+
+
                 if jifan=="役满" and i == 3:
                     static_text1 = wx.StaticText(panely, -1, '绿一色', style=wx.LEFT)
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
@@ -227,7 +395,7 @@ if __name__ == '__main__':
     # 默认显示在屏幕右下
     w, h = 600, 480
     screen_width, screen_height = wx.GetDisplaySize()
-    frame = wx.Frame(None, title='日麻役种分析', size=(w, h), pos=(screen_width - w, screen_height - h))
+    frame = wx.Frame(None, title='日麻役种分析', size=(w, h), pos=(screen_width - w, screen_height - h - 50))
     panel = wx.Panel(frame)
 
     # TODO: 撤销按钮
