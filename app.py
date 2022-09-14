@@ -91,7 +91,7 @@ def zhaopaixing(ipai, shangyi_cnt, shangyipx, paixing, ispaixing, paitype, daoji
                 shangyi_cnt_cp[ipai - 2] = shangyi_cnt_cp[ipai - 2] - 1
                 shangyi_cnt_cp[ipai - 1] = shangyi_cnt_cp[ipai - 1] - 1
                 zhaopaixing(ipai + 1, shangyi_cnt_cp, shangyipx_cp, paixing, ispaixing, paitype, daojigele + cnt[paitype * 9 + ipai])
-            if 8 > ipai > 0 != shangyi_cnt[ipai - 1] and shangyi_cnt[ipai + 1] != 0:
+            if 8 > ipai > 0 and shangyi_cnt[ipai - 1] != 0 and shangyi_cnt[ipai + 1] != 0:
                 isshunzi = True
                 shangyipx_cp = copy.deepcopy(shangyipx)
                 shangyipx_cp["shunzi"].append((str(ipai - 1 + 1) + str(ipai + 1) + str(ipai + 1 + 1),
@@ -109,7 +109,7 @@ def zhaopaixing(ipai, shangyi_cnt, shangyipx, paixing, ispaixing, paitype, daoji
                 shangyipx_cp["shunzi"].append((str(ipai + 1) + str(ipai + 1 + 1) + str(ipai + 2 + 1),
                                             [daojigele + (cnt[paitype * 9 + ipai] - shangyi_cnt[ipai]),
                                              daojigele + cnt[paitype * 9 + ipai] + (cnt[paitype * 9 + ipai + 1] - shangyi_cnt[ipai + 1]),
-                                             daojigele + cnt[paitype * 9 + ipai] + cnt[paitype * 9 + 1] + (cnt[paitype * 9 + ipai + 2] - shangyi_cnt[ipai + 2])]))
+                                             daojigele + cnt[paitype * 9 + ipai] + cnt[paitype * 9 + ipai + 1] + (cnt[paitype * 9 + ipai + 2] - shangyi_cnt[ipai + 2])]))
                 shangyi_cnt_cp = copy.deepcopy(shangyi_cnt)
                 shangyi_cnt_cp[ipai] = shangyi_cnt_cp[ipai] - 1
                 shangyi_cnt_cp[ipai + 1] = shangyi_cnt_cp[ipai + 1] - 1
@@ -265,6 +265,9 @@ def send_tiles_func(need_interact, reset):
                             pais[paitypes[ipaitype]].append(title_index)
                     zhaopaixing(0, i_cnt, shangyipx, paixing, False, ipaitype, sum(cnt[:ipaitype * 9]))
 
+                cnt_copy = [m_cnt, p_cnt, s_cnt, z_cnt]
+
+
                 if jifan=="役满" and i == 0:
                     static_text1 = wx.StaticText(panely, -1, '九莲宝灯', style=wx.LEFT)
                     static_text2 = wx.StaticText(panely, -1, '同种数牌1112345678999+其中任意一种再有1张', style=wx.LEFT)
@@ -273,6 +276,7 @@ def send_tiles_func(need_interact, reset):
                     vboxy.Add(static_text2, flag=wx.LEFT, border=5)
                     daolenagepai = 0
                     paitype = 0
+                    shifoujiulianbaodeng = False
                     for tongyipainame in pais:
                         if paitype == 3:
                             break
@@ -288,7 +292,11 @@ def send_tiles_func(need_interact, reset):
                                 enable_pai[daolenagepai] = 1
                             daolenagepai += 1
                         if shifouyoupai:
+                            shifoujiulianbaodeng = True
                             enable_pais.append(enable_pai)
+                    if not shifoujiulianbaodeng:
+                        enable_pai = [0] * sum(cnt)
+                        enable_pais.append(enable_pai)
 
                 if jifan=="役满" and i == 1:
                     static_text1 = wx.StaticText(panely, -1, '国士无双', style=wx.LEFT)
@@ -444,6 +452,15 @@ def send_tiles_func(need_interact, reset):
                     static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
                     vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    enable_pai = [0] * sum(cnt)
+                    daolenagepai = len(pais["m"]) + len(pais["p"]) + len(pais["s"])
+                    fengpaijishu = [3, 3, 3, 3, 0, 0, 0, 0, 0]
+                    for paiindex, objpai in enumerate(pais["z"]):
+                        if objpai < 4 and fengpaijishu[objpai] != 0:
+                            fengpaijishu[objpai] -= 1
+                            enable_pai[daolenagepai] = 1
+                        daolenagepai += 1
+                    enable_pais.append(enable_pai)
 
 
                 if jifan=="六番" and i == 0:
@@ -452,6 +469,27 @@ def send_tiles_func(need_interact, reset):
                     static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
                     vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    daolenagepai = 0
+                    paitype = 0
+                    shifouqingyise = False
+                    for tongyipainame in pais:
+                        if paitype == 3:
+                            break
+                        paitype += 1
+                        tongyipai = pais[tongyipainame]
+                        enable_pai = [0] * sum(cnt)
+                        shifouyoupai = False
+                        for paiindex, objpai in enumerate(tongyipai):
+                            shifouyoupai = True
+                            enable_pai[daolenagepai] = 1
+                            daolenagepai += 1
+                        if shifouyoupai:
+                            shifouqingyise = True
+                            enable_pais.append(enable_pai)
+                    if not shifouqingyise:
+                        enable_pai = [0] * sum(cnt)
+                        enable_pais.append(enable_pai)
+
 
                 if jifan=="三番" and i == 0:
                     static_text1 = wx.StaticText(panely, -1, '混一色', style=wx.LEFT)
@@ -459,18 +497,119 @@ def send_tiles_func(need_interact, reset):
                     static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
                     vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    daolenagepai = 0
+                    paitype = 0
+                    shifouqingyise = False
+                    for tongyipainame in pais:
+                        if paitype == 3:
+                            break
+                        paitype += 1
+                        tongyipai = pais[tongyipainame]
+                        enable_pai = [0] * sum(cnt)
+                        shifouyoupai = False
+                        for paiindex, objpai in enumerate(tongyipai):
+                            shifouyoupai = True
+                            enable_pai[daolenagepai] = 1
+                            daolenagepai += 1
+                        zipaijishu = [3, 3, 3, 3, 3, 3, 3, 0, 0]
+                        zipaidaolenagepai = len(pais["m"]) + len(pais["p"]) + len(pais["s"])
+                        for paiindex, objpai in enumerate(pais["z"]):
+                            if zipaijishu[objpai] != 0:
+                                zipaijishu[objpai] -= 1
+                                enable_pai[zipaidaolenagepai] = 1
+                            zipaidaolenagepai += 1
+                        if shifouyoupai:
+                            shifouqingyise = True
+                            enable_pais.append(enable_pai)
+                    if not shifouqingyise:
+                        enable_pai = [0] * sum(cnt)
+                        enable_pais.append(enable_pai)
+
                 if jifan=="三番" and i == 1:
                     static_text1 = wx.StaticText(panely, -1, '纯全带幺九', style=wx.LEFT)
                     static_text2 = wx.StaticText(panely, -1, '只包含老头牌的4组顺子和刻子+老头牌的雀头', style=wx.LEFT)
                     static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
                     vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    enable_pai = [0] * sum(cnt)
+                    for pxstr in paixing:
+                        if pxstr == "z":
+                            continue
+                        max_laotoupai = 0
+                        max_enable_pais = [0] * sum(cnt)
+                        for pxdict in paixing[pxstr]:
+                            temp_max_laotoupai = 0
+                            temp_enable_pais = [0] * sum(cnt)
+                            laotoujishu = [3, 0, 0, 0, 0, 0, 0, 0, 3]
+                            for laotoushunzi, laotoushunziindex in pxdict["shunzi"]:
+                                if laotoushunzi[0] == "1" or laotoushunzi[2] == "9":
+                                    temp_max_laotoupai += 3
+                                    for laotouenablepai in laotoushunziindex:
+                                        temp_enable_pais[laotouenablepai] = 1
+                            for laotoushunzi, laotoushunziindex in pxdict["kezi"]:
+                                if laotoushunzi[0] == "1" or laotoushunzi[0] == "9":
+                                    temp_max_laotoupai += 3
+                                    temp_enable_pais[laotoushunziindex] = 1
+                                    temp_enable_pais[laotoushunziindex + 1] = 1
+                                    temp_enable_pais[laotoushunziindex + 2] = 1
+                            for laotoushunzi, laotoushunziindex in pxdict["duizi"]:
+                                if (laotoushunzi[0] == "1" or laotoushunzi[0] == "9") and laotoujishu[int(laotoushunzi[0]) - 1] > 0:
+                                    temp_max_laotoupai += 2
+                                    temp_enable_pais[laotoushunziindex] = 1
+                                    temp_enable_pais[laotoushunziindex + 1] = 1
+                                    laotoujishu[int(laotoushunzi[0]) - 1] -= 2
+                            for laotoushunzi, laotoushunziindex in pxdict["meiyong"]:
+                                if (laotoushunzi[0] == "1" or laotoushunzi[0] == "9") and laotoujishu[int(laotoushunzi[0]) - 1] > 0:
+                                    temp_max_laotoupai += 1
+                                    temp_enable_pais[laotoushunziindex] = 1
+                                    laotoujishu[int(laotoushunzi[0]) - 1] -= 2
+                            if temp_max_laotoupai > max_laotoupai:
+                                max_laotoupai = temp_max_laotoupai
+                                max_enable_pais = temp_enable_pais
+                        for laotouindex, laotpuenable in enumerate(max_enable_pais):
+                            if laotpuenable:
+                                enable_pai[laotouindex] = 1
+                    enable_pais.append(enable_pai)
+
                 if jifan=="三番" and i == 2:
                     static_text1 = wx.StaticText(panely, -1, '二杯口', style=wx.LEFT)
                     static_text2 = wx.StaticText(panely, -1, '包含2组一杯口', style=wx.LEFT)
                     static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
                     vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    enable_pai = [0] * sum(cnt)
+                    paitype = 0
+                    for pxstr in paixing:
+                        if pxstr == "z":
+                            continue
+                        max_laotoupai = 0
+                        max_enable_pais = [0] * sum(cnt)
+                        for pxdict in paixing[pxstr]:
+                            temp_max_laotoupai = 0
+                            temp_enable_pais = [0] * sum(cnt)
+                            laotoujishu = [3, 0, 0, 0, 0, 0, 0, 0, 3]
+                            for laotoushunzi, laotoushunziindex in pxdict["shunzi"]:
+                                if cnt_copy[paitype][int(laotoushunzi[0]) - 1] > 1 or cnt_copy[paitype][int(laotoushunzi[1]) - 1] > 1 or cnt_copy[paitype][int(laotoushunzi[2]) - 1] > 1:
+                                    temp_max_laotoupai += 3
+                                    for laotouenablepai in laotoushunziindex:
+                                        temp_enable_pais[laotouenablepai] = 1
+                                    if cnt_copy[paitype][int(laotoushunzi[0]) - 1] > 1:
+                                        temp_max_laotoupai += 1
+                                        temp_enable_pais[laotoushunziindex[0] + 1] = 1
+                                    if cnt_copy[paitype][int(laotoushunzi[1]) - 1] > 1:
+                                        temp_max_laotoupai += 1
+                                        temp_enable_pais[laotoushunziindex[1] + 1] = 1
+                                    if cnt_copy[paitype][int(laotoushunzi[2]) - 1] > 1:
+                                        temp_max_laotoupai += 1
+                                        temp_enable_pais[laotoushunziindex[2] + 1] = 1
+                            if temp_max_laotoupai > max_laotoupai:
+                                max_laotoupai = temp_max_laotoupai
+                                max_enable_pais = temp_enable_pais
+                        for laotouindex, laotpuenable in enumerate(max_enable_pais):
+                            if laotpuenable:
+                                enable_pai[laotouindex] = 1
+                        paitype += 1
+                    enable_pais.append(enable_pai)
 
 
                 if jifan=="二番" and i == 0:
@@ -479,42 +618,165 @@ def send_tiles_func(need_interact, reset):
                     static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
                     vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    enable_pai = [0] * sum(cnt)
+                    daolenagepai = len(pais["m"]) + len(pais["p"]) + len(pais["s"])
+                    fengpaijishu = [0, 0, 0, 0, 3, 3, 3, 0, 0]
+                    for paiindex, objpai in enumerate(pais["z"]):
+                        if 7 > objpai > 3 and fengpaijishu[objpai] != 0:
+                            fengpaijishu[objpai] -= 1
+                            enable_pai[daolenagepai] = 1
+                        daolenagepai += 1
+                    enable_pais.append(enable_pai)
+
                 if jifan=="二番" and i == 1:
                     static_text1 = wx.StaticText(panely, -1, '三杠子', style=wx.LEFT)
                     static_text2 = wx.StaticText(panely, -1, '一人开杠3次', style=wx.LEFT)
                     static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
                     vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    enable_pai = [0] * sum(cnt)
+                    max_gangzi = 0
+                    max_gangzi_index = []
+                    suoyougangzis = []
+                    zhaosuoyougangzi(0, paixing, [], suoyougangzis)
+                    for gangzis in suoyougangzis:
+                        if max_gangzi < len(gangzis):
+                            max_gangzi = len(gangzis)
+                            max_gangzi_index = gangzis
+                    for gangzi, gangziindex in max_gangzi_index:
+                        enable_pai[gangziindex] = 1
+                        enable_pai[gangziindex + 1] = 1
+                        enable_pai[gangziindex + 2] = 1
+                        enable_pai[gangziindex + 3] = 1
+                    enable_pais.append(enable_pai)
+
                 if jifan=="二番" and i == 2:
                     static_text1 = wx.StaticText(panely, -1, '混老头', style=wx.LEFT)
                     static_text2 = wx.StaticText(panely, -1, '胡牌时只包含老头牌(19万，19筒，19索)和字牌', style=wx.LEFT)
                     static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
                     vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    daolenagepai = 0
+                    paitype = 0
+                    enable_pai = [0] * sum(cnt)
+                    for tongyipainame in pais:
+                        tongyipai = pais[tongyipainame]
+                        for paiindex, objpai in enumerate(tongyipai):
+                            if objpai == 0 or objpai == 8 or paitype == 3:
+                                enable_pai[daolenagepai] = 1
+                            daolenagepai += 1
+                        paitype += 1
+                    enable_pais.append(enable_pai)
+
                 if jifan=="二番" and i == 3:
                     static_text1 = wx.StaticText(panely, -1, '三暗刻', style=wx.LEFT)
                     static_text2 = wx.StaticText(panely, -1, '拥有3组没有碰的刻子', style=wx.LEFT)
                     static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
                     vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    enable_pai = [0] * sum(cnt)
+                    max_kezi = 0
+                    max_kezi_index = []
+                    suoyoukezis = []
+                    zhaosuoyoukezi(0, paixing, [], suoyoukezis)
+                    for kezis in suoyoukezis:
+                        if max_kezi < len(kezis):
+                            max_kezi = len(kezis)
+                            max_kezi_index = kezis
+                    for kezi, keziindex in max_kezi_index:
+                        enable_pai[keziindex] = 1
+                        enable_pai[keziindex + 1] = 1
+                        enable_pai[keziindex + 2] = 1
+                    enable_pais.append(enable_pai)
+
                 if jifan=="二番" and i == 4:
                     static_text1 = wx.StaticText(panely, -1, '对对和', style=wx.LEFT)
                     static_text2 = wx.StaticText(panely, -1, '拥有4组刻子或者杠', style=wx.LEFT)
                     static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
                     vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    enable_pai = [0] * sum(cnt)
+                    max_kezi = 0
+                    max_kezi_index = []
+                    suoyoukezis = []
+                    zhaosuoyoukezi(0, paixing, [], suoyoukezis)
+                    for kezis in suoyoukezis:
+                        if max_kezi < len(kezis):
+                            max_kezi = len(kezis)
+                            max_kezi_index = kezis
+                    for kezi, keziindex in max_kezi_index:
+                        enable_pai[keziindex] = 1
+                        enable_pai[keziindex + 1] = 1
+                        enable_pai[keziindex + 2] = 1
+                    max_gangzi = 0
+                    max_gangzi_index = []
+                    suoyougangzis = []
+                    zhaosuoyougangzi(0, paixing, [], suoyougangzis)
+                    for gangzis in suoyougangzis:
+                        if max_gangzi < len(gangzis):
+                            max_gangzi = len(gangzis)
+                            max_gangzi_index = gangzis
+                    for gangzi, gangziindex in max_gangzi_index:
+                        enable_pai[gangziindex] = 1
+                        enable_pai[gangziindex + 1] = 1
+                        enable_pai[gangziindex + 2] = 1
+                        enable_pai[gangziindex + 3] = 1
+                    enable_pais.append(enable_pai)
+
                 if jifan=="二番" and i == 5:
                     static_text1 = wx.StaticText(panely, -1, '三色同刻', style=wx.LEFT)
                     static_text2 = wx.StaticText(panely, -1, '万，筒，索都有相同数字的刻子', style=wx.LEFT)
                     static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
                     vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+
                 if jifan=="二番" and i == 6:
                     static_text1 = wx.StaticText(panely, -1, '三色同顺', style=wx.LEFT)
                     static_text2 = wx.StaticText(panely, -1, '万，筒，索都有相同数字的顺子', style=wx.LEFT)
                     static_text2.SetForegroundColour('gray')
                     vboxy.Add(static_text1, flag=wx.LEFT, border=5)
                     vboxy.Add(static_text2, flag=wx.LEFT, border=5)
+                    enable_pai = [0] * sum(cnt)
+                    paitype = 0
+                    for pxstr in paixing:
+                        if pxstr == "z":
+                            continue
+                        max_laotoupai = 0
+                        max_enable_pais = [0] * sum(cnt)
+                        for pxdict in paixing[pxstr]:
+                            temp_max_laotoupai = 0
+                            temp_enable_pais = [0] * sum(cnt)
+                            for laotoushunzi, laotoushunziindex in pxdict["shunzi"]:
+                                if (cnt_copy[0][int(laotoushunzi[0]) - 1] > 0 and cnt_copy[1][int(laotoushunzi[0]) - 1] > 0 and cnt_copy[2][int(laotoushunzi[0]) - 1] > 0) \
+                                        or (cnt_copy[0][int(laotoushunzi[1]) - 1] > 0 and cnt_copy[1][int(laotoushunzi[1]) - 1] > 0 and cnt_copy[2][int(laotoushunzi[1]) - 1] > 0) \
+                                        or (cnt_copy[0][int(laotoushunzi[2]) - 1] > 0 and cnt_copy[1][int(laotoushunzi[2]) - 1] > 0 and cnt_copy[2][int(laotoushunzi[2]) - 1] > 0):
+                                    temp_max_laotoupai += 3
+                                    for laotouenablepai in laotoushunziindex:
+                                        temp_enable_pais[laotouenablepai] = 1
+                                    if cnt_copy[0][int(laotoushunzi[0]) - 1] > 0 and cnt_copy[1][int(laotoushunzi[0]) - 1] > 0 and cnt_copy[2][int(laotoushunzi[0]) - 1] > 0:
+                                        temp_max_laotoupai += 2
+                                        temp_enable_pais[sum(cnt_copy[0][:int(laotoushunzi[0]) - 1])] = 1
+                                        temp_enable_pais[sum(cnt_copy[0]) + sum(cnt_copy[1][:int(laotoushunzi[0]) - 1])] = 1
+                                        temp_enable_pais[sum(cnt_copy[0]) + sum(cnt_copy[1]) + sum(cnt_copy[2][:int(laotoushunzi[0]) - 1])] = 1
+                                    if cnt_copy[0][int(laotoushunzi[1]) - 1] > 0 and cnt_copy[1][int(laotoushunzi[1]) - 1] > 0 and cnt_copy[2][int(laotoushunzi[1]) - 1] > 0:
+                                        temp_max_laotoupai += 2
+                                        temp_enable_pais[sum(cnt_copy[0][:int(laotoushunzi[1]) - 1])] = 1
+                                        temp_enable_pais[sum(cnt_copy[0]) + sum(cnt_copy[1][:int(laotoushunzi[1]) - 1])] = 1
+                                        temp_enable_pais[sum(cnt_copy[0]) + sum(cnt_copy[1]) + sum(cnt_copy[2][:int(laotoushunzi[1]) - 1])] = 1
+                                    if cnt_copy[0][int(laotoushunzi[2]) - 1] > 0 and cnt_copy[1][int(laotoushunzi[2]) - 1] > 0 and cnt_copy[2][int(laotoushunzi[2]) - 1] > 0:
+                                        temp_max_laotoupai += 2
+                                        temp_enable_pais[sum(cnt_copy[0][:int(laotoushunzi[2]) - 1])] = 1
+                                        temp_enable_pais[sum(cnt_copy[0]) + sum(cnt_copy[1][:int(laotoushunzi[2]) - 1])] = 1
+                                        temp_enable_pais[sum(cnt_copy[0]) + sum(cnt_copy[1]) + sum(cnt_copy[2][:int(laotoushunzi[2]) - 1])] = 1
+                            if temp_max_laotoupai > max_laotoupai:
+                                max_laotoupai = temp_max_laotoupai
+                                max_enable_pais = temp_enable_pais
+                        for laotouindex, laotpuenable in enumerate(max_enable_pais):
+                            if laotpuenable:
+                                enable_pai[laotouindex] = 1
+                        paitype += 1
+                    enable_pais.append(enable_pai)
+
                 if jifan=="二番" and i == 7:
                     static_text1 = wx.StaticText(panely, -1, '混全带幺九', style=wx.LEFT)
                     static_text2 = wx.StaticText(panely, -1, '包含老头牌加上字牌的4组顺子和刻子+么九牌的雀头', style=wx.LEFT)
